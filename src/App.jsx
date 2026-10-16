@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Float, OrbitControls, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { ArrowRight, CarFront, ChevronDown, MapPin, Menu, Search, ShieldCheck, Sparkles, X } from 'lucide-react';
+import GLBVehicle from './components/GLBVehicle';
 import './styles.css';
 
 const cars = [
@@ -129,6 +130,13 @@ function DemoCar({ color = '#d9dde1', scale = 1 }) {
   </group>;
 }
 
+function VehicleDisplay({ car, scale = 1 }) {
+  if (car?.modelUrl) {
+    return <GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={scale} />;
+  }
+  return <DemoCar color={car?.color || '#d9dde1'} scale={scale} />;
+}
+
 function Showroom() {
   return <>
     <color attach="background" args={['#050607']} />
@@ -144,7 +152,7 @@ function Showroom() {
     </mesh>
     <mesh position={[0, 3.2, -4.8]} receiveShadow><boxGeometry args={[20, 7, 0.2]} /><meshStandardMaterial color="#090b0d" roughness={0.7} /></mesh>
     <mesh position={[0, 1.7, -4.55]}><boxGeometry args={[7, 0.03, 0.04]} /><meshStandardMaterial color="#d8aa55" emissive="#8d5f16" emissiveIntensity={2.2} /></mesh>
-    <Float speed={1.2} rotationIntensity={0.08} floatIntensity={0.08}><DemoCar /></Float>
+    <Float speed={1.2} rotationIntensity={0.08} floatIntensity={0.08}><VehicleDisplay car={cars[0]} /></Float>
     <ContactShadows position={[0, -0.6, 0]} opacity={0.65} scale={8} blur={2.8} far={5} />
     <OrbitControls enablePan={false} minDistance={5} maxDistance={10} minPolarAngle={Math.PI * 0.32} maxPolarAngle={Math.PI * 0.53} target={[0, 0.35, 0]} />
   </>;
@@ -175,13 +183,13 @@ export default function App() {
 
       <section id="inventory" className="inventory section"><div className="section-head"><div><span className="eyebrow dark"><span /> CURATED COLLECTION</span><h2>Cars worth<br/><em>turning heads.</em></h2></div><p>Popular Nigerian-market vehicles, selected for quality, presence and everyday performance.</p></div><div className="filters">{['All','SUV','Sedan','Luxury'].map(f => <button className={filter === f ? 'active' : ''} key={f} onClick={() => setFilter(f)}>{f}</button>)}</div><div className="car-grid">{visibleCars.map(car => <CarCard key={car.name} car={car} onView={setActiveCar} />)}</div></section>
 
-      <section id="experience" className="experience section"><div className="experience-stage"><Canvas camera={{ position: [5, 2.6, 6], fov: 40 }}><ambientLight intensity={0.55}/><spotLight position={[3,6,4]} intensity={100} angle={0.5} castShadow/><Environment preset="warehouse"/><Float speed={1} rotationIntensity={0.12} floatIntensity={0.08}><DemoCar color="#e1e3e5" scale={1.05}/></Float><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4.8} maxDistance={9} /></Canvas></div><div className="experience-copy"><span className="eyebrow dark"><span/> REAL-TIME 3D</span><h2>Don't just<br/><em>look at it.</em></h2><p>Rotate. Inspect. Get closer. Our interactive 3D viewer puts the vehicle in your hands before you ever step into the showroom.</p><div className="feature-row"><div><ShieldCheck/><b>Verified vehicles</b><span>Quality-first selection</span></div><div><Sparkles/><b>Immersive viewing</b><span>Built for every screen</span></div></div></div></section>
+      <section id="experience" className="experience section"><div className="experience-stage"><Canvas camera={{ position: [5, 2.6, 6], fov: 40 }}><ambientLight intensity={0.55}/><spotLight position={[3,6,4]} intensity={100} angle={0.5} castShadow/><Environment preset="warehouse"/><Float speed={1} rotationIntensity={0.12} floatIntensity={0.08}><VehicleDisplay car={{ ...cars[0], color: '#e1e3e5' }} scale={1.05}/></Float><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4.8} maxDistance={9} /></Canvas></div><div className="experience-copy"><span className="eyebrow dark"><span/> REAL-TIME 3D</span><h2>Don't just<br/><em>look at it.</em></h2><p>Rotate. Inspect. Get closer. Our interactive 3D viewer puts the vehicle in your hands before you ever step into the showroom.</p><div className="feature-row"><div><ShieldCheck/><b>Verified vehicles</b><span>Quality-first selection</span></div><div><Sparkles/><b>Immersive viewing</b><span>Built for every screen</span></div></div></div></section>
 
       <section id="about" className="about section"><span className="eyebrow dark"><span/> WHY OSOGBO DEALERSHIP</span><h2>Local roots.<br/><em>Premium standards.</em></h2><p>Based in Osogbo, we are creating a smarter way for Nigerian drivers to discover their next vehicle—combining a trusted local dealership experience with technology that makes choosing a car feel extraordinary.</p><a className="text-link" href="#contact">Talk to our team <ArrowRight size={16}/></a></section>
     </main>
 
     <footer id="contact" className="footer"><div><div className="brand footer-brand"><span className="brand-mark"><CarFront size={19}/></span><span>OSOGBO<br/><b>DEALERSHIP</b></span></div><p>Premium cars. Local expertise. Osogbo, Osun State.</p></div><div className="footer-contact"><span>READY FOR YOUR NEXT DRIVE?</span><a href="https://wa.me/2340000000000">WhatsApp the dealership <ArrowRight size={16}/></a></div><div className="copyright">© 2026 Osogbo Dealership · Built for Nigeria</div></footer>
 
-    {activeCar && <div className="modal-backdrop" onClick={() => setActiveCar(null)}><div className="car-modal" onClick={e => e.stopPropagation()}><button className="modal-close" onClick={() => setActiveCar(null)}><X/></button><div className="modal-view"><Canvas camera={{ position: [4.8, 2.3, 5.5], fov: 40 }}><ambientLight intensity={0.5}/><spotLight position={[3,6,5]} intensity={120} angle={0.5} castShadow/><Environment preset="city"/><DemoCar color={activeCar.color} scale={1.05}/><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4} maxDistance={8}/></Canvas></div><div className="modal-info"><span className="eyebrow dark"><span/> {activeCar.type.toUpperCase()}</span><h2>{activeCar.name}</h2><p>{activeCar.year} · {activeCar.category} · Automatic · Petrol</p><strong>{activeCar.price}</strong><a className="primary-btn" href="https://wa.me/2340000000000">Enquire on WhatsApp <ArrowRight size={16}/></a></div></div></div>}
+    {activeCar && <div className="modal-backdrop" onClick={() => setActiveCar(null)}><div className="car-modal" onClick={e => e.stopPropagation()}><button className="modal-close" onClick={() => setActiveCar(null)}><X/></button><div className="modal-view"><Canvas camera={{ position: [4.8, 2.3, 5.5], fov: 40 }}><ambientLight intensity={0.5}/><spotLight position={[3,6,5]} intensity={120} angle={0.5} castShadow/><Environment preset="city"/><VehicleDisplay car={activeCar} scale={1.05}/><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4} maxDistance={8}/></Canvas></div><div className="modal-info"><span className="eyebrow dark"><span/> {activeCar.type.toUpperCase()}</span><h2>{activeCar.name}</h2><p>{activeCar.year} · {activeCar.category} · Automatic · Petrol</p><strong>{activeCar.price}</strong><a className="primary-btn" href="https://wa.me/2340000000000">Enquire on WhatsApp <ArrowRight size={16}/></a></div></div></div>}
   </div>;
 }
