@@ -15,7 +15,7 @@ const REFERENCES = [
 export default function ReferenceCarDemo({ onClose }) {
   const [modelInfo, setModelInfo] = useState(null);
   const [animationName, setAnimationName] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedImage, setSelectedImage] = useState(null);
   const handleModelInfo = useCallback((info) => setModelInfo(info), []);
 
   return <div className="reference-car-demo" role="dialog" aria-modal="true" aria-label="Animated reference car demonstration">
@@ -44,6 +44,7 @@ export default function ReferenceCarDemo({ onClose }) {
           </button>)}
         </div>
         <div className="reference-demo-image-note"><Info size={14} /> Reference renders show the same concept model from different angles; the 3D viewer remains interactive above.</div>
+        {selectedImage !== null && <div className="reference-image-lightbox" role="dialog" aria-modal="true" aria-label={REFERENCES[selectedImage].label} onClick={() => setSelectedImage(null)}><button onClick={() => setSelectedImage(null)} aria-label="Close image preview"><X size={20} /></button><img src={REFERENCES[selectedImage].src} alt={REFERENCES[selectedImage].label + ' enlarged reference view'} onClick={(event) => event.stopPropagation()} /><span>{REFERENCES[selectedImage].label} · reference render</span></div>}
       </section>
       <aside className="reference-demo-controls">
         <span className="reference-demo-kicker">TRY REAL MODEL ANIMATIONS</span>
