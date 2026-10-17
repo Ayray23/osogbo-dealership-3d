@@ -14,40 +14,118 @@ const cars = [
   { name: 'Lexus GX 460', year: 2019, price: '₦78M', type: 'Tokunbo', category: 'SUV', color: '#25282b' },
 ];
 
-function Wheel({ position, color = '#101114' }) {
-  return <mesh position={position} rotation={[Math.PI / 2, 0, 0]} castShadow>
-    <cylinderGeometry args={[0.43, 0.43, 0.24, 32]} />
-    <meshStandardMaterial color={color} metalness={0.8} roughness={0.24} />
-  </mesh>;
+function Wheel({ position }) {
+  return <group position={position} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh castShadow>
+      <cylinderGeometry args={[0.43, 0.43, 0.25, 40]} />
+      <meshStandardMaterial color="#101114" metalness={0.15} roughness={0.82} />
+    </mesh>
+    <mesh>
+      <cylinderGeometry args={[0.285, 0.285, 0.265, 32]} />
+      <meshStandardMaterial color="#7e858b" metalness={0.92} roughness={0.22} />
+    </mesh>
+    <mesh position={[0, 0.145, 0]}>
+      <cylinderGeometry args={[0.105, 0.105, 0.025, 24]} />
+      <meshStandardMaterial color="#d6dadd" metalness={0.9} roughness={0.2} />
+    </mesh>
+    {Array.from({ length: 10 }, (_, i) => <mesh key={i} rotation={[0, 0, (i * Math.PI) / 5]} position={[0, 0.145, 0]}>
+      <boxGeometry args={[0.035, 0.24, 0.035]} />
+      <meshStandardMaterial color="#d7dadd" metalness={0.9} roughness={0.24} />
+    </mesh>)}
+    <mesh position={[0, -0.145, 0]}>
+      <cylinderGeometry args={[0.105, 0.105, 0.025, 24]} />
+      <meshStandardMaterial color="#d6dadd" metalness={0.9} roughness={0.2} />
+    </mesh>
+  </group>;
 }
 
 function DemoCar({ color = '#d9dde1', scale = 1 }) {
   const group = useRef();
-  useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.18; });
-  return <group ref={group} scale={scale} position={[0, -0.25, 0]}>
-    <mesh castShadow receiveShadow position={[0, 0.45, 0]}>
-      <boxGeometry args={[3.7, 0.62, 1.55]} />
-      <meshPhysicalMaterial color={color} metalness={0.68} roughness={0.2} clearcoat={1} clearcoatRoughness={0.08} />
+  const paint = useMemo(() => new THREE.MeshPhysicalMaterial({ color, metalness: 0.72, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08 }), [color]);
+  const glass = useMemo(() => new THREE.MeshPhysicalMaterial({ color: '#101923', metalness: 0.35, roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.92 }), []);
+  useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.12; });
+  return <group ref={group} scale={scale} position={[0, -0.48, 0]}>
+    {/* Sculpted lower body and hood */}
+    <mesh castShadow receiveShadow position={[0, 0.52, 0]} material={paint}>
+      <boxGeometry args={[3.75, 0.54, 1.62, 4, 2, 2]} />
     </mesh>
-    <mesh castShadow position={[0.15, 0.92, 0]} rotation={[0, 0, 0]}>
-      <boxGeometry args={[2.05, 0.65, 1.38]} />
-      <meshPhysicalMaterial color={color} metalness={0.55} roughness={0.2} clearcoat={1} />
+    <mesh castShadow position={[1.13, 0.72, 0]} rotation={[0, 0, -0.045]} material={paint}>
+      <boxGeometry args={[1.12, 0.19, 1.58, 2, 1, 2]} />
     </mesh>
-    <mesh position={[0.2, 0.94, 0]}>
-      <boxGeometry args={[1.72, 0.42, 1.4]} />
-      <meshPhysicalMaterial color="#101820" metalness={0.35} roughness={0.1} transmission={0.08} transparent opacity={0.82} />
+    <mesh castShadow position={[-1.27, 0.69, 0]} rotation={[0, 0, 0.035]} material={paint}>
+      <boxGeometry args={[0.9, 0.18, 1.56, 2, 1, 2]} />
     </mesh>
-    <mesh position={[1.86, 0.5, 0]}>
-      <boxGeometry args={[0.08, 0.17, 1.18]} />
-      <meshStandardMaterial color="#f4f7fa" emissive="#ffffff" emissiveIntensity={1.5} />
+    {/* Roof and sloped windscreen */}
+    <mesh castShadow position={[-0.02, 1.02, 0]} material={paint}>
+      <boxGeometry args={[1.58, 0.12, 1.32, 2, 1, 2]} />
     </mesh>
-    <mesh position={[-1.86, 0.5, 0]}>
-      <boxGeometry args={[0.08, 0.17, 1.18]} />
-      <meshStandardMaterial color="#e62b2b" emissive="#420707" emissiveIntensity={0.8} />
+    <mesh castShadow position={[0.74, 0.91, 0]} rotation={[0, 0, -0.48]} material={paint}>
+      <boxGeometry args={[0.62, 0.12, 1.34, 2, 1, 2]} />
     </mesh>
-    <Wheel position={[1.25, 0.1, 0.82]} /><Wheel position={[-1.25, 0.1, 0.82]} />
-    <Wheel position={[1.25, 0.1, -0.82]} /><Wheel position={[-1.25, 0.1, -0.82]} />
-    <mesh position={[0, 0.1, 0]}><boxGeometry args={[0.8, 0.08, 1.62]} /><meshStandardMaterial color="#050608" metalness={0.9} /></mesh>
+    <mesh castShadow position={[-0.77, 0.9, 0]} rotation={[0, 0, 0.48]} material={paint}>
+      <boxGeometry args={[0.62, 0.12, 1.34, 2, 1, 2]} />
+    </mesh>
+    {/* Panoramic dark glazing */}
+    <mesh position={[-0.02, 1.08, 0]} material={glass}>
+      <boxGeometry args={[1.48, 0.045, 1.22]} />
+    </mesh>
+    {[-0.66, 0.66].map((z) => <group key={z} position={[0, 0, z]}>
+      <mesh position={[-0.03, 0.88, 0]} rotation={[0, 0, 0.08]} material={glass}>
+        <boxGeometry args={[0.74, 0.3, 0.025]} />
+      </mesh>
+      <mesh position={[0.62, 0.88, 0]} rotation={[0, 0, -0.48]} material={glass}>
+        <boxGeometry args={[0.48, 0.28, 0.025]} />
+      </mesh>
+      <mesh position={[-0.67, 0.87, 0]} rotation={[0, 0, 0.48]} material={glass}>
+        <boxGeometry args={[0.48, 0.28, 0.025]} />
+      </mesh>
+      <mesh position={[0.05, 0.57, 0.018]}>
+        <boxGeometry args={[0.015, 0.3, 0.02]} />
+        <meshStandardMaterial color="#525960" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0.47, 0.64, 0.045]}>
+        <boxGeometry args={[0.12, 0.035, 0.035]} />
+        <meshStandardMaterial color="#171a1d" metalness={0.7} roughness={0.3} />
+      </mesh>
+    </group>)}
+    {/* Front fascia, grille, LED headlamps and rear lamps */}
+    <mesh position={[1.89, 0.48, 0]}>
+      <boxGeometry args={[0.045, 0.25, 0.84]} />
+      <meshStandardMaterial color="#16191c" metalness={0.7} roughness={0.25} />
+    </mesh>
+    <mesh position={[1.92, 0.48, 0]}>
+      <boxGeometry args={[0.055, 0.16, 0.42]} />
+      <meshStandardMaterial color="#050607" metalness={0.35} roughness={0.3} />
+    </mesh>
+    {[-0.55, 0.55].map((z) => <group key={z}>
+      <mesh position={[1.89, 0.65, z]}>
+        <boxGeometry args={[0.07, 0.1, 0.43]} />
+        <meshStandardMaterial color="#e8f5ff" emissive="#b6dcff" emissiveIntensity={2.2} />
+      </mesh>
+      <mesh position={[-1.89, 0.62, z]}>
+        <boxGeometry args={[0.06, 0.13, 0.34]} />
+        <meshStandardMaterial color="#e52b36" emissive="#9d101b" emissiveIntensity={1.3} />
+      </mesh>
+    </group>)}
+    <mesh position={[1.91, 0.29, 0]}>
+      <boxGeometry args={[0.09, 0.07, 1.05]} />
+      <meshStandardMaterial color="#252a30" metalness={0.8} roughness={0.25} />
+    </mesh>
+    <mesh position={[-1.91, 0.29, 0]}>
+      <boxGeometry args={[0.09, 0.07, 1.05]} />
+      <meshStandardMaterial color="#252a30" metalness={0.8} roughness={0.25} />
+    </mesh>
+    {/* Mirrors, door handles and wheels */}
+    {[-0.7, 0.7].map((z) => <mesh key={z} position={[0.52, 0.86, z * 1.08]} castShadow>
+      <sphereGeometry args={[0.095, 16, 12]} />
+      <meshStandardMaterial color={color} metalness={0.75} roughness={0.2} />
+    </mesh>)}
+    {[-0.45, 0.38].map((x) => [-0.827, 0.827].map((z) => <mesh key={x + ':' + z} position={[x, 0.59, z]}>
+      <boxGeometry args={[0.22, 0.025, 0.025]} />
+      <meshStandardMaterial color="#dce0e4" metalness={0.85} roughness={0.22} />
+    </mesh>))}
+    <Wheel position={[1.22, 0.14, 0.82]} /><Wheel position={[-1.22, 0.14, 0.82]} />
+    <Wheel position={[1.22, 0.14, -0.82]} /><Wheel position={[-1.22, 0.14, -0.82]} />
   </group>;
 }
 
