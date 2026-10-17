@@ -4,6 +4,7 @@ import { ContactShadows, Environment, Html, OrbitControls } from '@react-three/d
 import { ArrowLeft, CarFront, Check, ChevronRight, CircleHelp, DoorOpen, Gauge, Info, Layers3, X } from 'lucide-react';
 import * as THREE from 'three';
 import GLBVehicle from './GLBVehicle';
+import ReferenceCarDemo from './ReferenceCarDemo';
 
 class InspectorModelBoundary extends React.Component {
   constructor(props) { super(props); this.state = { failed: false }; }
@@ -117,6 +118,7 @@ export default function VehicleInspector({ car, onClose, onEnquire }) {
   const [zone, setZone] = useState('exterior');
   const [modelInfo, setModelInfo] = useState(null);
   const [animationName, setAnimationName] = useState(null);
+  const [showReferenceDemo, setShowReferenceDemo] = useState(false);
   const handleModelInfo = useCallback((info) => setModelInfo(info), []);
   const [activeFeature, setActiveFeature] = useState(features.exterior[0][0]);
   const featureList = features[zone];
@@ -139,6 +141,7 @@ export default function VehicleInspector({ car, onClose, onEnquire }) {
           {zones.map(({ id, label, icon: Icon }) => <button key={id} role="tab" aria-selected={zone === id} className={zone === id ? 'active' : ''} onClick={() => switchZone(id)}><Icon size={17} /><span>{label}</span></button>)}
         </div>
         {zone !== 'exterior' && <p className="inspector-disclaimer"><Info size={15} /> This area is a 3D layout concept, not an exact scan of this vehicle. The current exterior GLB assets do not include verified movable doors, bonnet, boot or detailed interiors.</p>}
+        <button className="inspector-reference-demo-launch" onClick={() => setShowReferenceDemo(true)}><span><strong>Try a fully animated reference car</strong><small>Real door and bonnet animation · separate demo model</small></span><ChevronRight size={17} /></button>
         {zone === 'exterior' && <section className="inspector-model-capabilities" aria-live="polite">
           <div className="inspector-capability-heading"><strong>Model capability check</strong><span>{modelInfo ? 'Model inspected' : 'Checking model…'}</span></div>
           {!modelInfo ? <p>Reading the 3D file for real vehicle parts and built-in animations.</p> : <>
@@ -163,5 +166,6 @@ export default function VehicleInspector({ car, onClose, onEnquire }) {
         <small className="inspector-note">Vehicle specifications and equipment should be confirmed against the actual unit for sale.</small>
       </aside>
     </div>
+    {showReferenceDemo && <ReferenceCarDemo onClose={() => setShowReferenceDemo(false)} />}
   </div>;
 }
