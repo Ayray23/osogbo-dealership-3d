@@ -2,7 +2,7 @@ import React, { Suspense, useCallback, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, Html, OrbitControls } from '@react-three/drei';
 import { ArrowLeft, CheckCircle2, DoorOpen, Gauge, Info, Play, RotateCcw, X } from 'lucide-react';
-import GLBVehicle from './GLBVehicle';
+import ResilientGLBVehicle from './ResilientGLBVehicle';
 
 class ReferenceModelBoundary extends React.Component {
   constructor(props) { super(props); this.state = { failed: false }; }
@@ -45,7 +45,7 @@ export default function ReferenceCarDemo({ onClose }) {
           <Environment preset="city" />
           <ReferenceModelBoundary>
             <Suspense fallback={<Html center><div className="reference-demo-loading">Loading 3D model…</div></Html>}>
-              <GLBVehicle modelUrl={MODEL_URL} color="#d5d8dc" scale={1.15} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} />
+              <ResilientGLBVehicle modelUrl={MODEL_URL} color="#d5d8dc" scale={1.15} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} fallback={<Html center><div className="reference-demo-loading">The reference model could not load from either host. The image gallery is still available.</div></Html>} />
             </Suspense>
           </ReferenceModelBoundary>
           <OrbitControls enablePan={false} minDistance={2.6} maxDistance={8} minPolarAngle={0.25} maxPolarAngle={Math.PI * 0.78} />

@@ -2,7 +2,7 @@ import React, { Suspense, useCallback, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, Html, OrbitControls } from '@react-three/drei';
 import { ArrowLeft, DoorOpen, Info, RotateCcw, X } from 'lucide-react';
-import GLBVehicle from './GLBVehicle';
+import ResilientGLBVehicle from './ResilientGLBVehicle';
 
 const MODEL_URL = 'https://cdn.3dassets.dev/assets/27798/v1/model.glb';
 
@@ -45,7 +45,7 @@ export default function OpenableCarDemo({ onClose }) {
           <Environment preset="city" />
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.1, 0]} receiveShadow><planeGeometry args={[24, 24]} /><meshStandardMaterial color="#111419" roughness={0.38} metalness={0.35} /></mesh>
           <Suspense fallback={<Html center><span style={{ color: '#f4d9a2', whiteSpace: 'nowrap', fontSize: 12 }}>Loading animated model…</span></Html>}>
-            <GLBVehicle modelUrl={MODEL_URL} scale={1.05} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} />
+            <ResilientGLBVehicle modelUrl={MODEL_URL} scale={1.05} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} fallback={<Html center><div style={{padding:18,color:"#f4d9a2",background:"#0a0c0f",borderRadius:10}}>The remote hatchback model could not load. Please check your connection and retry.</div></Html>} />
           </Suspense>
           <OrbitControls enablePan={false} minDistance={2.7} maxDistance={9} minPolarAngle={0.2} maxPolarAngle={Math.PI * 0.78} />
         </Canvas></OpenableModelBoundary>

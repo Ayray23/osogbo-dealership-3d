@@ -20,6 +20,9 @@ export default function GLBVehicle({ modelUrl, color, scale = 1, autoRotate = tr
 
     clone.position.sub(center);
     clone.scale.multiplyScalar(3.7 / maxDimension);
+    // Normalize the model to sit on y=0 regardless of the source GLB's pivot/origin.
+    const normalizedBounds = new THREE.Box3().setFromObject(clone);
+    clone.position.y -= normalizedBounds.min.y;
 
     clone.traverse((node) => {
       if (!node.isMesh) return;
@@ -77,7 +80,7 @@ export default function GLBVehicle({ modelUrl, color, scale = 1, autoRotate = tr
   });
 
   return (
-    <group ref={group} scale={scale} position={[0, -0.35, 0]}>
+    <group ref={group} scale={scale} position={[0, 0, 0]}>
       <primitive object={vehicle} />
     </group>
   );
