@@ -5,6 +5,13 @@ import { ArrowLeft, CarFront, Check, ChevronRight, CircleHelp, DoorOpen, Gauge, 
 import * as THREE from 'three';
 import GLBVehicle from './GLBVehicle';
 
+class InspectorModelBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error) { console.error('Inspection vehicle model failed to load.', error); }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
+
 const zones = [
   { id: 'exterior', label: 'Exterior', icon: CarFront, title: 'Walk around the vehicle', description: 'Rotate the vehicle and inspect its exterior lines, wheels, lighting and body details.' },
   { id: 'cabin', label: 'Cabin', icon: DoorOpen, title: 'Cabin & seating', description: 'Explore a conceptual cabin layout. Exact upholstery, controls and trim depend on the vehicle specification.' },
@@ -97,7 +104,7 @@ function InspectionScene({ car, zone, activeFeature, onFeature }) {
     <directionalLight position={[4, 7, 5]} intensity={2.3} castShadow />
     <spotLight position={[-5, 5, -3]} intensity={55} angle={.7} penumbra={1} color="#b6cfff" />
     <Environment preset="city" />
-    {zone === 'exterior' ? <Suspense fallback={<CarFallback color={car.color} />}><GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={1.1} autoRotate={false} /></Suspense> : zone === 'cabin' ? <CabinModel /> : zone === 'boot' ? <BootModel /> : <EngineModel />}
+    {zone === 'exterior' ? <InspectorModelBoundary fallback={<CarFallback color={car.color} />}><Suspense fallback={<CarFallback color={car.color} />}><GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={1.1} autoRotate={false} /></Suspense></InspectorModelBoundary> : zone === 'cabin' ? <CabinModel /> : zone === 'boot' ? <BootModel /> : <EngineModel />}
     {zone !== 'exterior' && <ContactShadows position={[0, -.45, 0]} opacity={.45} scale={7} blur={2.4} far={4} />}
     <OrbitControls enablePan={false} minDistance={2.4} maxDistance={7} minPolarAngle={.28} maxPolarAngle={Math.PI * .78} />
     {zoneFeatures.map(([name], i) => <Html key={zone + name} position={[((i % 3) - 1) * .72, .75 - Math.floor(i / 3) * .45, zone === 'exterior' ? .72 : .4]} distanceFactor={7} occlude={false}>
