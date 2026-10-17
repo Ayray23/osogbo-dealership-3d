@@ -42,3 +42,17 @@ npm run preview
 ## Important inventory note
 
 Vehicle names, prices, and availability currently serve as sample content. They must be confirmed by the dealership before the website is used commercially. Replace the placeholder WhatsApp contact with the dealership's verified number before launch.
+
+
+## Real 3D vehicle previews
+
+The inventory's interactive models are loaded as GLB files from the public `pedrosoandre/carros` asset repository, pinned to source commit `0a56de377f02f2574d781f6920fed08d6423ec2f` to avoid floating branch updates. The source repository provides optimized GLB models with CC BY 4.0 attribution requirements. Credits and links to each original Sketchfab model are shown in the website footer.
+
+- Toyota Camry 40 — source model by Ford mondeo
+- Lexus RX 350 MK2 — source model by Merc_TV
+- Toyota RAV4 Hybrid — source model by tonielpro520
+- Honda CR-V — source model by Palma123 JAAT
+- Hyundai Elantra N — source model by Maroi Mister Let Me Think Official 3D Studio
+- Toyota Corolla Cross — source model by Nieve5677
+
+These are representative 3D previews, not proof that those exact vehicles are in stock. Confirm actual inventory, model year, condition, price, and the dealership's contact details before launch. The source library's models were optimized for web delivery; original creator credits and the CC BY 4.0 license are linked in the footer.
