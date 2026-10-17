@@ -52,10 +52,6 @@ export default function ResilientGLBVehicle({
   );
 
   useEffect(() => {
-    setAttempt(0);
-  }, [modelUrl]);
-
-  useEffect(() => {
     if (attempt < urls.length || !onModelInfo) return;
     onModelInfo({
       nodeNames: [],
