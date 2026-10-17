@@ -1,187 +1,39 @@
-import React, { Suspense, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Float, OrbitControls, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
-import { ArrowRight, CarFront, ChevronDown, MapPin, Menu, Search, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, CarFront, CheckCircle2, ChevronDown, MapPin, Menu, Search, ShieldCheck, Sparkles, X } from 'lucide-react';
+import GLBVehicle from './components/GLBVehicle';
 import './styles.css';
 
+class ModelErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error) {
+    console.error('3D vehicle model failed to load; using fallback preview.', error);
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
 const cars = [
-  { name: 'Toyota Camry XSE', year: 2021, price: '₦48.5M', type: 'Tokunbo', category: 'Sedan', color: '#cfd4d8' },
-  { name: 'Lexus RX 350', year: 2020, price: '₦62M', type: 'Tokunbo', category: 'SUV', color: '#15171b' },
-  { name: 'Toyota Highlander', year: 2022, price: '₦73M', type: 'Tokunbo', category: 'SUV', color: '#b7b1a5' },
-  { name: 'Mercedes-Benz C300', year: 2021, price: '₦68M', type: 'Tokunbo', category: 'Luxury', color: '#111317' },
-  { name: 'Honda Accord Sport', year: 2020, price: '₦39M', type: 'Nigerian Used', category: 'Sedan', color: '#e5e6e8' },
-  { name: 'Lexus GX 460', year: 2019, price: '₦78M', type: 'Tokunbo', category: 'SUV', color: '#25282b' },
+  { name:'Toyota Camry 3.5 (XV40)',year:'2006–2011',price:'Request price',type:'3D Preview',category:'Sedan',color:'#cfd4d8',fuel:'Petrol',transmission:'Automatic',drive:'FWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/toyota-camry.glb' },
+  { name:'Lexus RX 350 (MK2)',year:'2003–2008',price:'Request price',type:'3D Preview',category:'SUV',color:'#15171b',fuel:'Petrol',transmission:'Automatic',drive:'AWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/lexus-rx.glb' },
+  { name:'Toyota RAV4 Hybrid',year:'2021',price:'Request price',type:'3D Preview',category:'SUV',color:'#b7b1a5',fuel:'Hybrid',transmission:'Automatic',drive:'AWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/toyota-rav4.glb' },
+  { name:'Honda CR-V 1.5 Turbo',year:'2025',price:'Request price',type:'3D Preview',category:'SUV',color:'#e5e6e8',fuel:'Petrol',transmission:'Automatic',drive:'AWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/honda-cr-v.glb' },
+  { name:'Hyundai Elantra N',year:'2021–2023',price:'Request price',type:'3D Preview',category:'Sedan',color:'#111317',fuel:'Petrol',transmission:'Automatic',drive:'FWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/hyundai-elantra.glb' },
+  { name:'Toyota Corolla Cross',year:'2021+',price:'Request price',type:'3D Preview',category:'SUV',color:'#25282b',fuel:'Petrol',transmission:'Automatic',drive:'FWD',condition:'Foreign Used',modelUrl:'https://cdn.jsdelivr.net/gh/pedrosoandre/carros@0a56de377f02f2574d781f6920fed08d6423ec2f/assets/toyota-corolla-cross.glb' },
 ];
 
-function Wheel({ position }) {
-  return <group position={position} rotation={[Math.PI / 2, 0, 0]}>
-    <mesh castShadow>
-      <cylinderGeometry args={[0.43, 0.43, 0.25, 40]} />
-      <meshStandardMaterial color="#101114" metalness={0.15} roughness={0.82} />
-    </mesh>
-    <mesh>
-      <cylinderGeometry args={[0.285, 0.285, 0.265, 32]} />
-      <meshStandardMaterial color="#7e858b" metalness={0.92} roughness={0.22} />
-    </mesh>
-    <mesh position={[0, 0.145, 0]}>
-      <cylinderGeometry args={[0.105, 0.105, 0.025, 24]} />
-      <meshStandardMaterial color="#d6dadd" metalness={0.9} roughness={0.2} />
-    </mesh>
-    {Array.from({ length: 10 }, (_, i) => <mesh key={i} rotation={[0, 0, (i * Math.PI) / 5]} position={[0, 0.145, 0]}>
-      <boxGeometry args={[0.035, 0.24, 0.035]} />
-      <meshStandardMaterial color="#d7dadd" metalness={0.9} roughness={0.24} />
-    </mesh>)}
-    <mesh position={[0, -0.145, 0]}>
-      <cylinderGeometry args={[0.105, 0.105, 0.025, 24]} />
-      <meshStandardMaterial color="#d6dadd" metalness={0.9} roughness={0.2} />
-    </mesh>
-  </group>;
-}
-
-function DemoCar({ color = '#d9dde1', scale = 1 }) {
-  const group = useRef();
-  const paint = useMemo(() => new THREE.MeshPhysicalMaterial({ color, metalness: 0.72, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08 }), [color]);
-  const glass = useMemo(() => new THREE.MeshPhysicalMaterial({ color: '#101923', metalness: 0.35, roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.92 }), []);
-  useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.12; });
-  return <group ref={group} scale={scale} position={[0, -0.48, 0]}>
-    {/* Sculpted lower body and hood */}
-    <mesh castShadow receiveShadow position={[0, 0.52, 0]} material={paint}>
-      <boxGeometry args={[3.75, 0.54, 1.62, 4, 2, 2]} />
-    </mesh>
-    <mesh castShadow position={[1.13, 0.72, 0]} rotation={[0, 0, -0.045]} material={paint}>
-      <boxGeometry args={[1.12, 0.19, 1.58, 2, 1, 2]} />
-    </mesh>
-    <mesh castShadow position={[-1.27, 0.69, 0]} rotation={[0, 0, 0.035]} material={paint}>
-      <boxGeometry args={[0.9, 0.18, 1.56, 2, 1, 2]} />
-    </mesh>
-    {/* Roof and sloped windscreen */}
-    <mesh castShadow position={[-0.02, 1.02, 0]} material={paint}>
-      <boxGeometry args={[1.58, 0.12, 1.32, 2, 1, 2]} />
-    </mesh>
-    <mesh castShadow position={[0.74, 0.91, 0]} rotation={[0, 0, -0.48]} material={paint}>
-      <boxGeometry args={[0.62, 0.12, 1.34, 2, 1, 2]} />
-    </mesh>
-    <mesh castShadow position={[-0.77, 0.9, 0]} rotation={[0, 0, 0.48]} material={paint}>
-      <boxGeometry args={[0.62, 0.12, 1.34, 2, 1, 2]} />
-    </mesh>
-    {/* Panoramic dark glazing */}
-    <mesh position={[-0.02, 1.08, 0]} material={glass}>
-      <boxGeometry args={[1.48, 0.045, 1.22]} />
-    </mesh>
-    {[-0.66, 0.66].map((z) => <group key={z} position={[0, 0, z]}>
-      <mesh position={[-0.03, 0.88, 0]} rotation={[0, 0, 0.08]} material={glass}>
-        <boxGeometry args={[0.74, 0.3, 0.025]} />
-      </mesh>
-      <mesh position={[0.62, 0.88, 0]} rotation={[0, 0, -0.48]} material={glass}>
-        <boxGeometry args={[0.48, 0.28, 0.025]} />
-      </mesh>
-      <mesh position={[-0.67, 0.87, 0]} rotation={[0, 0, 0.48]} material={glass}>
-        <boxGeometry args={[0.48, 0.28, 0.025]} />
-      </mesh>
-      <mesh position={[0.05, 0.57, 0.018]}>
-        <boxGeometry args={[0.015, 0.3, 0.02]} />
-        <meshStandardMaterial color="#525960" metalness={0.8} roughness={0.3} />
-      </mesh>
-      <mesh position={[0.47, 0.64, 0.045]}>
-        <boxGeometry args={[0.12, 0.035, 0.035]} />
-        <meshStandardMaterial color="#171a1d" metalness={0.7} roughness={0.3} />
-      </mesh>
-    </group>)}
-    {/* Front fascia, grille, LED headlamps and rear lamps */}
-    <mesh position={[1.89, 0.48, 0]}>
-      <boxGeometry args={[0.045, 0.25, 0.84]} />
-      <meshStandardMaterial color="#16191c" metalness={0.7} roughness={0.25} />
-    </mesh>
-    <mesh position={[1.92, 0.48, 0]}>
-      <boxGeometry args={[0.055, 0.16, 0.42]} />
-      <meshStandardMaterial color="#050607" metalness={0.35} roughness={0.3} />
-    </mesh>
-    {[-0.55, 0.55].map((z) => <group key={z}>
-      <mesh position={[1.89, 0.65, z]}>
-        <boxGeometry args={[0.07, 0.1, 0.43]} />
-        <meshStandardMaterial color="#e8f5ff" emissive="#b6dcff" emissiveIntensity={2.2} />
-      </mesh>
-      <mesh position={[-1.89, 0.62, z]}>
-        <boxGeometry args={[0.06, 0.13, 0.34]} />
-        <meshStandardMaterial color="#e52b36" emissive="#9d101b" emissiveIntensity={1.3} />
-      </mesh>
-    </group>)}
-    <mesh position={[1.91, 0.29, 0]}>
-      <boxGeometry args={[0.09, 0.07, 1.05]} />
-      <meshStandardMaterial color="#252a30" metalness={0.8} roughness={0.25} />
-    </mesh>
-    <mesh position={[-1.91, 0.29, 0]}>
-      <boxGeometry args={[0.09, 0.07, 1.05]} />
-      <meshStandardMaterial color="#252a30" metalness={0.8} roughness={0.25} />
-    </mesh>
-    {/* Mirrors, door handles and wheels */}
-    {[-0.7, 0.7].map((z) => <mesh key={z} position={[0.52, 0.86, z * 1.08]} castShadow>
-      <sphereGeometry args={[0.095, 16, 12]} />
-      <meshStandardMaterial color={color} metalness={0.75} roughness={0.2} />
-    </mesh>)}
-    {[-0.45, 0.38].map((x) => [-0.827, 0.827].map((z) => <mesh key={x + ':' + z} position={[x, 0.59, z]}>
-      <boxGeometry args={[0.22, 0.025, 0.025]} />
-      <meshStandardMaterial color="#dce0e4" metalness={0.85} roughness={0.22} />
-    </mesh>))}
-    <Wheel position={[1.22, 0.14, 0.82]} /><Wheel position={[-1.22, 0.14, 0.82]} />
-    <Wheel position={[1.22, 0.14, -0.82]} /><Wheel position={[-1.22, 0.14, -0.82]} />
-  </group>;
-}
-
-function Showroom() {
-  return <>
-    <color attach="background" args={['#050607']} />
-    <fog attach="fog" args={['#050607', 8, 24]} />
-    <PerspectiveCamera makeDefault position={[6.6, 3.1, 7.2]} fov={38} />
-    <ambientLight intensity={0.45} />
-    <spotLight position={[4, 7, 5]} intensity={130} angle={0.48} penumbra={0.8} castShadow shadow-mapSize={[2048, 2048]} />
-    <spotLight position={[-5, 4, -1]} intensity={90} angle={0.6} penumbra={1} color="#7d9dff" />
-    <pointLight position={[0, 2.4, 0]} intensity={20} color="#fff4dd" />
-    <Environment preset="city" />
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.62, 0]} receiveShadow>
-      <planeGeometry args={[40, 40]} /><meshStandardMaterial color="#0c0e10" roughness={0.25} metalness={0.35} />
-    </mesh>
-    <mesh position={[0, 3.2, -4.8]} receiveShadow><boxGeometry args={[20, 7, 0.2]} /><meshStandardMaterial color="#090b0d" roughness={0.7} /></mesh>
-    <mesh position={[0, 1.7, -4.55]}><boxGeometry args={[7, 0.03, 0.04]} /><meshStandardMaterial color="#d8aa55" emissive="#8d5f16" emissiveIntensity={2.2} /></mesh>
-    <Float speed={1.2} rotationIntensity={0.08} floatIntensity={0.08}><DemoCar /></Float>
-    <ContactShadows position={[0, -0.6, 0]} opacity={0.65} scale={8} blur={2.8} far={5} />
-    <OrbitControls enablePan={false} minDistance={5} maxDistance={10} minPolarAngle={Math.PI * 0.32} maxPolarAngle={Math.PI * 0.53} target={[0, 0.35, 0]} />
-  </>;
-}
-
-function CarCard({ car, onView }) {
-  return <article className="car-card">
-    <div className="card-visual"><div className="mini-car"><div className="mini-window" /><div className="mini-body" style={{ background: car.color }} /><span className="mini-wheel w1" /><span className="mini-wheel w2" /></div><span className="condition">{car.type}</span></div>
-    <div className="card-copy"><span className="year">{car.year}</span><h3>{car.name}</h3><p>{car.category} · Automatic · Petrol</p><div className="card-bottom"><strong>{car.price}</strong><button onClick={() => onView(car)}>3D View <ArrowRight size={15} /></button></div></div>
-  </article>;
-}
-
-export default function App() {
-  const [menu, setMenu] = useState(false);
-  const [activeCar, setActiveCar] = useState(null);
-  const [filter, setFilter] = useState('All');
-  const visibleCars = useMemo(() => filter === 'All' ? cars : cars.filter(c => c.category === filter), [filter]);
-  return <div className="app">
-    <header className="nav"><div className="brand"><span className="brand-mark"><CarFront size={19} /></span><span>OSOGBO<br/><b>DEALERSHIP</b></span></div><nav className={menu ? 'open' : ''}><a href="#home">Home</a><a href="#inventory">Inventory</a><a href="#experience">3D Experience</a><a href="#about">About</a></nav><div className="nav-actions"><button className="icon-btn"><Search size={18} /></button><button className="menu-btn" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><a className="nav-cta" href="#contact">Book a Test Drive <ArrowRight size={16} /></a></div></header>
-
-    <main>
-      <section id="home" className="hero">
-        <div className="hero-canvas"><Canvas shadows dpr={[1, 1.6]} gl={{ antialias: true, powerPreference: 'high-performance' }}><Suspense fallback={<Html center><div className="loading">LOADING SHOWROOM</div></Html>}><Showroom /></Suspense></Canvas></div>
-        <div className="hero-gradient" />
-        <div className="hero-copy"><div className="eyebrow"><span /> OSOGBO · OSUN STATE · NIGERIA</div><h1>FIND YOUR<br/><em>EXTRAORDINARY</em><br/>DRIVE.</h1><p>Explore a curated collection of vehicles through a next-generation 3D dealership experience.</p><div className="hero-actions"><a href="#inventory" className="primary-btn">Explore Inventory <ArrowRight size={17} /></a><a href="#experience" className="ghost-btn">Enter 3D Experience <Sparkles size={16} /></a></div></div>
-        <div className="hero-bottom"><div><MapPin size={15}/> Osogbo, Osun State</div><div className="scroll">SCROLL TO EXPLORE <ChevronDown size={15}/></div><div>EST. 2026</div></div>
-      </section>
-
-      <section id="inventory" className="inventory section"><div className="section-head"><div><span className="eyebrow dark"><span /> CURATED COLLECTION</span><h2>Cars worth<br/><em>turning heads.</em></h2></div><p>Popular Nigerian-market vehicles, selected for quality, presence and everyday performance.</p></div><div className="filters">{['All','SUV','Sedan','Luxury'].map(f => <button className={filter === f ? 'active' : ''} key={f} onClick={() => setFilter(f)}>{f}</button>)}</div><div className="car-grid">{visibleCars.map(car => <CarCard key={car.name} car={car} onView={setActiveCar} />)}</div></section>
-
-      <section id="experience" className="experience section"><div className="experience-stage"><Canvas camera={{ position: [5, 2.6, 6], fov: 40 }}><ambientLight intensity={0.55}/><spotLight position={[3,6,4]} intensity={100} angle={0.5} castShadow/><Environment preset="warehouse"/><Float speed={1} rotationIntensity={0.12} floatIntensity={0.08}><DemoCar color="#e1e3e5" scale={1.05}/></Float><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4.8} maxDistance={9} /></Canvas></div><div className="experience-copy"><span className="eyebrow dark"><span/> REAL-TIME 3D</span><h2>Don't just<br/><em>look at it.</em></h2><p>Rotate. Inspect. Get closer. Our interactive 3D viewer puts the vehicle in your hands before you ever step into the showroom.</p><div className="feature-row"><div><ShieldCheck/><b>Verified vehicles</b><span>Quality-first selection</span></div><div><Sparkles/><b>Immersive viewing</b><span>Built for every screen</span></div></div></div></section>
-
-      <section id="about" className="about section"><span className="eyebrow dark"><span/> WHY OSOGBO DEALERSHIP</span><h2>Local roots.<br/><em>Premium standards.</em></h2><p>Based in Osogbo, we are creating a smarter way for Nigerian drivers to discover their next vehicle—combining a trusted local dealership experience with technology that makes choosing a car feel extraordinary.</p><a className="text-link" href="#contact">Talk to our team <ArrowRight size={16}/></a></section>
-    </main>
-
-    <footer id="contact" className="footer"><div><div className="brand footer-brand"><span className="brand-mark"><CarFront size={19}/></span><span>OSOGBO<br/><b>DEALERSHIP</b></span></div><p>Premium cars. Local expertise. Osogbo, Osun State.</p></div><div className="footer-contact"><span>READY FOR YOUR NEXT DRIVE?</span><a href="https://wa.me/2340000000000">WhatsApp the dealership <ArrowRight size={16}/></a></div><div className="copyright">© 2026 Osogbo Dealership · Built for Nigeria</div></footer>
-
-    {activeCar && <div className="modal-backdrop" onClick={() => setActiveCar(null)}><div className="car-modal" onClick={e => e.stopPropagation()}><button className="modal-close" onClick={() => setActiveCar(null)}><X/></button><div className="modal-view"><Canvas camera={{ position: [4.8, 2.3, 5.5], fov: 40 }}><ambientLight intensity={0.5}/><spotLight position={[3,6,5]} intensity={120} angle={0.5} castShadow/><Environment preset="city"/><DemoCar color={activeCar.color} scale={1.05}/><ContactShadows position={[0,-0.62,0]} opacity={0.65} scale={8} blur={2.5}/><OrbitControls enablePan={false} minDistance={4} maxDistance={8}/></Canvas></div><div className="modal-info"><span className="eyebrow dark"><span/> {activeCar.type.toUpperCase()}</span><h2>{activeCar.name}</h2><p>{activeCar.year} · {activeCar.category} · Automatic · Petrol</p><strong>{activeCar.price}</strong><a className="primary-btn" href="https://wa.me/2340000000000">Enquire on WhatsApp <ArrowRight size={16}/></a></div></div></div>}
-  </div>;
-}
+function DemoCar({color='#d9dde1',scale=1}){const group=useRef();const paint=useMemo(()=>new THREE.MeshPhysicalMaterial({color,metalness:.72,roughness:.2,clearcoat:1}),[color]);useFrame((_,d)=>{if(group.current)group.current.rotation.y+=d*.12});return <group ref={group} scale={scale} position={[0,-.48,0]}><mesh castShadow material={paint}><boxGeometry args={[3.7,.55,1.6,4,2,2]}/></mesh><mesh position={[0,.45,0]} material={paint}><boxGeometry args={[2.25,.55,1.35,3,2,2]}/></mesh><mesh position={[0,.75,0]}><boxGeometry args={[1.8,.05,1.1]}/><meshStandardMaterial color="#17212b" metalness={.25} roughness={.12}/></mesh>{[[-1.2,.12,.82],[1.2,.12,.82],[-1.2,.12,-.82],[1.2,.12,-.82]].map(p=><mesh key={p.join()} position={p} rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.43,.43,.24,32]}/><meshStandardMaterial color="#101114" roughness={.8}/></mesh>)}</group>}
+function VehicleDisplay({car,scale=1}){return car?.modelUrl?<GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={scale}/>:<DemoCar color={car?.color} scale={scale}/>}
+function Showroom(){const displayCars=cars.slice(0,5);const positions=[[-3.6,-.1,-1.5],[0,-.1,-3.1],[3.6,-.1,-1.5],[-2.2,-.1,2.2],[2.2,-.1,2.2]];return <><color attach="background" args={['#040506']}/><fog attach="fog" args={['#040506',8,25]}/><PerspectiveCamera makeDefault position={[8,5.5,10]} fov={40}/><ambientLight intensity={.4}/><directionalLight position={[0,8,4]} intensity={2.4} castShadow shadow-mapSize={[2048,2048]}/><spotLight position={[-6,6,4]} intensity={90} angle={.55} penumbra={1} color="#fff0d2"/><spotLight position={[6,5,-2]} intensity={75} angle={.5} penumbra={1} color="#8faeff"/><Environment preset="city"/><mesh rotation={[-Math.PI/2,0,0]} position={[0,-.62,0]} receiveShadow><planeGeometry args={[32,32]}/><meshStandardMaterial color="#0b0d0f" roughness={.2} metalness={.5}/></mesh><mesh position={[0,3.5,-5.5]}><boxGeometry args={[22,7.5,.22]}/><meshStandardMaterial color="#080a0c" roughness={.7}/></mesh><mesh position={[0,1.7,-5.35]}><boxGeometry args={[9,.035,.05]}/><meshStandardMaterial color="#d3a34e" emissive="#7c5012" emissiveIntensity={2.5}/></mesh><mesh position={[0,5.2,0]}><boxGeometry args={[22,.15,18]}/><meshStandardMaterial color="#070809"/></mesh>{[-7,-3.5,0,3.5,7].map(x=><mesh key={x} position={[x,5.03,0]}><boxGeometry args={[.05,.035,14]}/><meshStandardMaterial color="#d7ae65" emissive="#8a5b16" emissiveIntensity={2}/></mesh>)}{positions.map((p,i)=><group key={i} position={p}><mesh position={[0,-.03,0]} receiveShadow><cylinderGeometry args={[2.05,2.05,.12,64]}/><meshStandardMaterial color="#15171a" metalness={.75} roughness={.2}/></mesh><mesh position={[0,.05,0]}><torusGeometry args={[1.82,.022,12,64]}/><meshStandardMaterial color="#c79a4d" emissive="#71480e" emissiveIntensity={2}/></mesh><Float speed={1.1} floatIntensity={.03}><Suspense fallback={null}><ModelErrorBoundary fallback={<DemoCar color={displayCars[i].color} scale={i===1?.72:.58}/>}><VehicleDisplay car={displayCars[i]} scale={i===1?.72:.58}/></ModelErrorBoundary></Suspense></Float><Html position={[0,-.42,1.82]} center><div className="showroom-label">{displayCars[i].name}</div></Html></group>)}<ContactShadows position={[0,-.61,0]} opacity={.6} scale={18} blur={2.8} far={9}/><OrbitControls enablePan={false} minDistance={6.5} maxDistance={15} minPolarAngle={Math.PI*.28} maxPolarAngle={Math.PI*.54} target={[0,.2,0]}/></>}
+function CarCard({car,onView}){const ref=useRef();const[ready,setReady]=useState(false);useEffect(()=>{if(!ref.current)return;if(!('IntersectionObserver'in window)){setReady(true);return}const o=new IntersectionObserver(e=>{if(e.some(x=>x.isIntersecting)){setReady(true);o.disconnect()}},{rootMargin:'180px'});o.observe(ref.current);return()=>o.disconnect()},[]);return <article className="car-card"><div className="card-visual" ref={ref}>{ready?<Canvas dpr={1} camera={{position:[4.5,2.1,4.5],fov:42}} gl={{antialias:false,alpha:true}}><ambientLight intensity={1.15}/><directionalLight position={[4,5,3]} intensity={2}/><Suspense fallback={<Html center><span className="loading">LOADING MODEL</span></Html>}><ModelErrorBoundary fallback={<Html center><span className="loading">3D PREVIEW UNAVAILABLE</span></Html>}><VehicleDisplay car={car} scale={.78}/></ModelErrorBoundary></Suspense><OrbitControls enablePan={false} enableZoom={false}/></Canvas>:<div className="preview-placeholder"><CarFront size={30}/><span>Interactive 3D preview</span></div>}<span className="condition">{car.type}</span></div><div className="card-copy"><span className="year">{car.year}</span><h3>{car.name}</h3><p>{car.category} · {car.condition}</p><div className="spec-row"><span>{car.fuel}</span><span>{car.transmission}</span><span>{car.drive}</span></div><div className="card-bottom"><strong>{car.price}</strong><button onClick={()=>onView(car)}>View details <ArrowRight size={15}/></button></div></div></article>}
+function EnquiryModal({car,onClose}){const[form,setForm]=useState({name:'',phone:'',message:''});const[done,setDone]=useState(false);const submit=e=>{e.preventDefault();setDone(true)};if(done)return <div className="form-modal"><div className="form-card success"><CheckCircle2 size={42}/><span className="eyebrow">ENQUIRY RECEIVED</span><h2>We have your request.</h2><p>Your interest in <strong>{car.name}</strong> has been captured. Connect the dealership's WhatsApp or phone number here before launch to send enquiries directly.</p><button className="primary" onClick={onClose}>Back to vehicle</button></div></div>;return <div className="form-modal" onClick={onClose}><form className="form-card" onClick={e=>e.stopPropagation()} onSubmit={submit}><button type="button" className="modal-close" onClick={onClose}><X/></button><span className="eyebrow">REQUEST DETAILS</span><h2>{car.name}</h2><p className="form-sub">Tell the dealership how to reach you.</p><label>Full name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Phone / WhatsApp<input required type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label><label>Message<textarea rows="3" value={form.message} onChange={e=>setForm({...form,message:e.target.value})} placeholder="I want to know the current price and availability..."/></label><button className="primary" type="submit">Send enquiry <ArrowRight size={16}/></button></form></div>}
+export default function App(){const[menu,setMenu]=useState(false);const[query,setQuery]=useState('');const[category,setCategory]=useState('All');const[selected,setSelected]=useState(null);const[showroom,setShowroom]=useState(false);const[enquiry,setEnquiry]=useState(null);const[finance,setFinance]=useState({price:15000000,deposit:3000000,months:36});const filtered=cars.filter(c=>(category==='All'||c.category===category)&&c.name.toLowerCase().includes(query.toLowerCase()));const loan=Math.max(0,finance.price-finance.deposit);const monthly=loan/finance.months;return <div className="site-shell"><header className="topbar"><a className="brand" href="#top">OSOGBO<span>DEALERSHIP</span></a><nav className={menu?'nav open':'nav'}><a href="#inventory" onClick={()=>setMenu(false)}>Inventory</a><a href="#experience" onClick={()=>setMenu(false)}>3D Experience</a><a href="#finance" onClick={()=>setMenu(false)}>Finance</a><a href="#contact" onClick={()=>setMenu(false)}>Contact</a></nav><button className="menu-button" onClick={()=>setMenu(!menu)} aria-label="Toggle menu">{menu?<X/>:<Menu/>}</button></header><main id="top"><section className="hero"><div className="hero-copy"><span className="eyebrow"><Sparkles size={14}/> OSOGBO · OSUN STATE</span><h1>Cars you can<br/><em>experience</em> in 3D.</h1><p>Explore a premium digital showroom built for the Nigerian market, with interactive vehicle models and a dealership experience designed for Osogbo.</p><div className="hero-actions"><a href="#inventory" className="primary">Explore inventory <ArrowRight size={16}/></a><button className="secondary" onClick={()=>setShowroom(true)}>Enter 3D showroom <Sparkles size={16}/></button></div><div className="hero-meta"><span><ShieldCheck size={15}/> Curated vehicles</span><span><MapPin size={15}/> Osogbo, Nigeria</span></div></div><div className="hero-canvas"><Canvas shadows dpr={[1,1.5]}><Showroom/></Canvas><div className="canvas-note">DRAG · ROTATE · EXPLORE</div></div></section><section className="inventory" id="inventory"><div className="section-head"><div><span className="eyebrow">CURRENT COLLECTION</span><h2>Selected vehicles.</h2></div><div className="filters"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search vehicles"/></div><select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option><option>Sedan</option><option>SUV</option></select></div></div><div className="car-grid">{filtered.map(car=><CarCard key={car.name} car={car} onView={setSelected}/>)}</div></section><section className="trust-strip"><div><ShieldCheck/><strong>Vehicle-first experience</strong><span>Inspect before you enquire.</span></div><div><MapPin/><strong>Osogbo dealership</strong><span>Built around local buyers.</span></div><div><CheckCircle2/><strong>Transparent enquiry</strong><span>Confirm stock and price directly.</span></div></section><section className="experience" id="experience"><div className="experience-copy"><span className="eyebrow">THE 3D EXPERIENCE</span><h2>Walk into the<br/><em>showroom.</em></h2><p>Move around the virtual dealership floor, inspect multiple vehicles and discover the collection from every angle.</p><button className="primary" onClick={()=>setShowroom(true)}>Open showroom <ArrowRight size={16}/></button></div><div className="experience-stage"><Canvas shadows dpr={[1,1.5]}><Showroom/></Canvas><div className="canvas-note">REAL-TIME 3D · WEBGL</div></div></section><section className="finance" id="finance"><div><span className="eyebrow">PLANNING YOUR PURCHASE</span><h2>Estimate a<br/><em>monthly plan.</em></h2><p>This is an illustrative calculator, not a financing offer. Confirm deposit, rates, fees and eligibility with the dealership or lender.</p></div><div className="finance-card"><label>Vehicle budget <strong>₦{finance.price.toLocaleString()}</strong><input type="range" min="5000000" max="60000000" step="500000" value={finance.price} onChange={e=>setFinance({...finance,price:+e.target.value})}/></label><label>Deposit <strong>₦{finance.deposit.toLocaleString()}</strong><input type="range" min="0" max={Math.max(0,finance.price*.8)} step="100000" value={Math.min(finance.deposit,finance.price*.8)} onChange={e=>setFinance({...finance,deposit:+e.target.value})}/></label><label>Term <strong>{finance.months} months</strong><input type="range" min="6" max="60" step="6" value={finance.months} onChange={e=>setFinance({...finance,months:+e.target.value})}/></label><div className="estimate"><span>Illustrative monthly principal</span><strong>₦{Math.round(monthly).toLocaleString()}</strong></div></div></section></main><footer id="contact"><div><a className="brand" href="#top">OSOGBO<span>DEALERSHIP</span></a><p>Premium vehicle discovery for Osogbo and beyond.</p></div><div className="footer-contact"><span>VISIT</span><strong>Osogbo, Osun State</strong><span>Call / WhatsApp details can be added before launch.</span></div><div className="asset-credits"><span>3D MODEL CREDITS · CC BY 4.0</span><p>Optimized web models supplied by <a href="https://github.com/pedrosoandre/carros" target="_blank" rel="noreferrer">carros</a>. Original creators and source links are retained in the project README. These previews are representative; confirm actual stock, condition, price and contact details before launch.</p></div><div className="copyright">© 2026 Osogbo Dealership · Built for Nigeria</div></footer>{showroom&&<div className="showroom-modal"><button className="modal-close" onClick={()=>setShowroom(false)} aria-label="Close showroom"><X/></button><div className="modal-title"><span>FULL SHOWROOM</span><strong>Explore the collection</strong></div><Canvas shadows dpr={[1,1.5]}><Showroom/></Canvas><div className="canvas-note">DRAG · ROTATE · EXPLORE</div></div>}{selected&&<div className="detail-modal" onClick={()=>setSelected(null)}><div className="detail-panel" onClick={e=>e.stopPropagation()}><button className="modal-close" onClick={()=>setSelected(null)}><X/></button><div className="detail-view"><Canvas shadows camera={{position:[4.5,2.2,4.5],fov:40}}><color attach="background" args={['#101214']}/><ambientLight intensity={.75}/><spotLight position={[4,6,4]} intensity={90}/><Environment preset="city"/><Suspense fallback={<Html center><span className="loading">LOADING MODEL</span></Html>}><ModelErrorBoundary fallback={<Html center><span className="loading">3D PREVIEW UNAVAILABLE</span></Html>}><VehicleDisplay car={selected} scale={1}/></ModelErrorBoundary></Suspense><OrbitControls enablePan={false} minDistance={3.5} maxDistance={7}/></Canvas></div><div className="detail-copy"><span className="eyebrow">3D VEHICLE PREVIEW</span><h2>{selected.name}</h2><p>{selected.year} · {selected.category} · {selected.condition}</p><div className="detail-specs"><span><b>Fuel</b>{selected.fuel}</span><span><b>Transmission</b>{selected.transmission}</span><span><b>Drive</b>{selected.drive}</span><span><b>Location</b>Osogbo</span></div><strong>{selected.price}</strong><button className="primary" onClick={()=>setEnquiry(selected)}>Request details <ArrowRight size={16}/></button></div></div></div>}{enquiry&&<EnquiryModal car={enquiry} onClose={()=>setEnquiry(null)}/>}</div>}
