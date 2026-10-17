@@ -67,7 +67,7 @@ function CarCard({ car, onView, onBook }) {
   return <article className="car-card"><div className="card-visual" ref={ref}>
     {ready ? <Canvas dpr={1} camera={{ position: [4.5, 2.1, 4.5], fov: 42 }} gl={{ antialias: false, alpha: true }}>
       <ambientLight intensity={1.15} /><directionalLight position={[4, 5, 3]} intensity={2} />
-      <Suspense fallback={<Html center><span className="loading">LOADING MODEL</span></Html>}><ModelErrorBoundary fallback={<Html center><span className="loading">3D PREVIEW UNAVAILABLE</span></Html>}><VehicleDisplay car={car} scale={0.78} /></ModelErrorBoundary></Suspense>
+      <Suspense fallback={<Html center><div className="model-skeleton" aria-label="Loading 3D vehicle"><span /></div></Html>}><ModelErrorBoundary fallback={<Html center><div className="model-unavailable"><CarFront size={22} /><span>3D preview unavailable</span></div></Html>}><VehicleDisplay car={car} scale={0.78} /></ModelErrorBoundary></Suspense>
       <OrbitControls enablePan={false} enableZoom={false} />
     </Canvas> : <div className="preview-placeholder"><CarFront size={30} /><span>Interactive 3D preview</span></div>}
     <span className="condition">3D Preview</span><span className={`status-badge status-${status}`}>{STATUS_LABEL[status]}</span>
