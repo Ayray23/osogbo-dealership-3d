@@ -77,7 +77,7 @@ function DemoCar({color='#cfd4d8',scale=1}) {
   const rubber = useMemo(() => new THREE.MeshStandardMaterial({ color: '#101114', roughness: 0.82 }), []);
   const rim = useMemo(() => new THREE.MeshStandardMaterial({ color: '#aeb4ba', metalness: 0.85, roughness: 0.2 }), []);
   useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.12; });
-  return <group ref={group} scale={scale} position={[0,-0.42,0]}>
+  return <group ref={group} scale={scale} position={[0,0.52,0]}>
     <mesh castShadow receiveShadow material={paint} position={[0,0.12,0]}><boxGeometry args={[3.65,0.52,1.58,4,2,2]}/></mesh>
     <mesh castShadow material={paint} position={[-0.08,0.48,0]}><boxGeometry args={[2.12,0.58,1.32,3,2,2]}/></mesh>
     <mesh material={glass} position={[-0.08,0.51,0]}><boxGeometry args={[1.84,0.39,1.35]}/></mesh>
