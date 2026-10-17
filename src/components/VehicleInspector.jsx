@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ContactShadows, Environment, Html, OrbitControls } from '@react-three/drei';
 import { ArrowLeft, CarFront, Check, ChevronRight, CircleHelp, DoorOpen, Gauge, Info, Layers3, X } from 'lucide-react';
@@ -96,7 +96,7 @@ function EngineModel() {
   </group>;
 }
 
-function InspectionScene({ car, zone, activeFeature, onFeature }) {
+function InspectionScene({ car, zone, activeFeature, onFeature, modelInfo, animationName, onModelInfo, onPlayAnimation }) {
   const zoneFeatures = features[zone];
   return <>
     <color attach="background" args={['#0a0c0f']} />
@@ -104,7 +104,7 @@ function InspectionScene({ car, zone, activeFeature, onFeature }) {
     <directionalLight position={[4, 7, 5]} intensity={2.3} castShadow />
     <spotLight position={[-5, 5, -3]} intensity={55} angle={.7} penumbra={1} color="#b6cfff" />
     <Environment preset="city" />
-    {zone === 'exterior' ? <InspectorModelBoundary fallback={<CarFallback color={car.color} />}><Suspense fallback={<CarFallback color={car.color} />}><GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={1.1} autoRotate={false} /></Suspense></InspectorModelBoundary> : zone === 'cabin' ? <CabinModel /> : zone === 'boot' ? <BootModel /> : <EngineModel />}
+    {zone === 'exterior' ? <InspectorModelBoundary fallback={<CarFallback color={car.color} />}><Suspense fallback={<CarFallback color={car.color} />}><GLBVehicle modelUrl={car.modelUrl} color={car.color} scale={1.1} autoRotate={false} onModelInfo={onModelInfo} animationName={animationName} /></Suspense></InspectorModelBoundary> : zone === 'cabin' ? <CabinModel /> : zone === 'boot' ? <BootModel /> : <EngineModel />}
     {zone !== 'exterior' && <ContactShadows position={[0, -.45, 0]} opacity={.45} scale={7} blur={2.4} far={4} />}
     <OrbitControls enablePan={false} minDistance={2.4} maxDistance={7} minPolarAngle={.28} maxPolarAngle={Math.PI * .78} />
     {zoneFeatures.map(([name], i) => <Html key={zone + name} position={[((i % 3) - 1) * .72, .75 - Math.floor(i / 3) * .45, zone === 'exterior' ? .72 : .4]} distanceFactor={7} occlude={false}>
@@ -115,6 +115,9 @@ function InspectionScene({ car, zone, activeFeature, onFeature }) {
 
 export default function VehicleInspector({ car, onClose, onEnquire }) {
   const [zone, setZone] = useState('exterior');
+  const [modelInfo, setModelInfo] = useState(null);
+  const [animationName, setAnimationName] = useState(null);
+  const handleModelInfo = useCallback((info) => setModelInfo(info), []);
   const [activeFeature, setActiveFeature] = useState(features.exterior[0][0]);
   const featureList = features[zone];
   const current = featureList.find(([name]) => name === activeFeature) || featureList[0];
@@ -129,13 +132,25 @@ export default function VehicleInspector({ car, onClose, onEnquire }) {
       <section className="inspector-viewer">
         <div className="inspector-viewer-heading"><span><i className="live-dot" /> INTERACTIVE 3D VIEW</span><span>Drag to rotate · Scroll or pinch to zoom</span></div>
         <Canvas shadows dpr={[1, 1.5]} camera={{ position: [4, 2.4, 4.8], fov: 42 }}>
-          <InspectionScene car={car} zone={zone} activeFeature={current[0]} onFeature={setActiveFeature} />
+          <InspectionScene car={car} zone={zone} activeFeature={current[0]} onFeature={setActiveFeature} modelInfo={modelInfo} animationName={animationName} onModelInfo={handleModelInfo} onPlayAnimation={setAnimationName} />
         </Canvas>
         <div className="inspector-view-label">{zones.find(z => z.id === zone)?.label}<span>·</span>{zone === 'exterior' ? 'Exterior asset' : 'Illustrative component view'}</div>
         <div className="inspector-zone-tabs" role="tablist" aria-label="Vehicle areas">
           {zones.map(({ id, label, icon: Icon }) => <button key={id} role="tab" aria-selected={zone === id} className={zone === id ? 'active' : ''} onClick={() => switchZone(id)}><Icon size={17} /><span>{label}</span></button>)}
         </div>
         {zone !== 'exterior' && <p className="inspector-disclaimer"><Info size={15} /> This area is a 3D layout concept, not an exact scan of this vehicle. The current exterior GLB assets do not include verified movable doors, bonnet, boot or detailed interiors.</p>}
+        {zone === 'exterior' && <section className="inspector-model-capabilities" aria-live="polite">
+          <div className="inspector-capability-heading"><strong>Model capability check</strong><span>{modelInfo ? 'Model inspected' : 'Checking model…'}</span></div>
+          {!modelInfo ? <p>Reading the 3D file for real vehicle parts and built-in animations.</p> : <>
+            <div className="inspector-capability-chips">
+              {Object.entries({doors:'Door parts',bonnet:'Bonnet/hood',boot:'Boot/tailgate',interior:'Interior parts',engine:'Engine parts'}).map(([key,label]) => <span key={key} className={modelInfo.parts[key] ? 'detected' : ''}><i />{label}</span>)}
+            </div>
+            {modelInfo.animations.length > 0 ? <>
+              <p className="inspector-capability-copy">This model includes {modelInfo.animations.length} built-in animation{modelInfo.animations.length === 1 ? '' : 's'}. Play an animation to test the movement embedded in the model.</p>
+              <div className="inspector-animation-controls">{modelInfo.animations.map((name) => <button key={name} className={animationName === name ? 'active' : ''} onClick={() => onPlayAnimation(name)}>{name.replace(/[-_]+/g, ' ')}</button>)}<button className="stop-animation" onClick={() => onPlayAnimation(null)}>Stop</button></div>
+            </> : <p className="inspector-capability-copy">This 3D file has no embedded animations, so doors, bonnet and boot cannot genuinely open in this model. I’m not faking those movements; this vehicle needs an articulated model asset before those controls can be enabled.</p>}
+          </>}
+        </section>}
       </section>
       <aside className="inspector-details">
         <div className="inspector-section-kicker">EXPLORE THE DETAILS</div>
