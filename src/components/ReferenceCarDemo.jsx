@@ -12,12 +12,6 @@ const REFERENCES = [
   { label: 'Rear detail', src: 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_rear.png' },
 ];
 
-function ModelError({ children, fallback }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return fallback;
-  return <React.Suspense fallback={fallback}>{children}</React.Suspense>;
-}
-
 export default function ReferenceCarDemo({ onClose }) {
   const [modelInfo, setModelInfo] = useState(null);
   const [animationName, setAnimationName] = useState(null);
