@@ -4,6 +4,16 @@ import { Environment, Html, OrbitControls } from '@react-three/drei';
 import { ArrowLeft, CheckCircle2, DoorOpen, Gauge, Info, Play, RotateCcw, X } from 'lucide-react';
 import GLBVehicle from './GLBVehicle';
 
+class ReferenceModelBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error) { console.error('Reference vehicle model failed to load.', error); }
+  render() {
+    if (this.state.failed) return <Html center><div className="reference-demo-loading">The remote model could not load. Check your connection and try again.</div></Html>;
+    return this.props.children;
+  }
+}
+
 const MODEL_URL = 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_rs_game_ready.glb';
 const REFERENCES = [
   { label: 'Exterior', src: 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_beauty.png' },
@@ -33,9 +43,11 @@ export default function ReferenceCarDemo({ onClose }) {
           <directionalLight position={[4, 7, 5]} intensity={2.4} castShadow />
           <spotLight position={[-5, 5, -3]} intensity={45} angle={0.7} penumbra={1} color="#b6cfff" />
           <Environment preset="city" />
-          <Suspense fallback={<Html center><div className="reference-demo-loading">Loading 3D model…</div></Html>}>
-            <GLBVehicle modelUrl={MODEL_URL} color="#d5d8dc" scale={1.15} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} />
-          </Suspense>
+          <ReferenceModelBoundary>
+            <Suspense fallback={<Html center><div className="reference-demo-loading">Loading 3D model…</div></Html>}>
+              <GLBVehicle modelUrl={MODEL_URL} color="#d5d8dc" scale={1.15} autoRotate={false} onModelInfo={handleModelInfo} animationName={animationName} />
+            </Suspense>
+          </ReferenceModelBoundary>
           <OrbitControls enablePan={false} minDistance={2.6} maxDistance={8} minPolarAngle={0.25} maxPolarAngle={Math.PI * 0.78} />
         </Canvas>
         <div className="reference-demo-images">
