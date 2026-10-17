@@ -11,6 +11,7 @@ import { cars, formatPrice, STATUS_LABEL } from './data/inventory';
 import { shop } from './config/shop';
 import './styles.css';
 import './shop.css';
+import './loading.css';
 
 class ModelErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
