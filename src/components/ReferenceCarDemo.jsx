@@ -14,7 +14,7 @@ class ReferenceModelBoundary extends React.Component {
   }
 }
 
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_rs_game_ready.glb';
+const MODEL_URL = 'https://raw.githubusercontent.com/JaronKBragg7337/spectral-gt-rs/34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_rs_game_ready.glb';
 const REFERENCES = [
   { label: 'Exterior', src: 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_beauty.png' },
   { label: 'Cockpit', src: 'https://cdn.jsdelivr.net/gh/JaronKBragg7337/spectral-gt-rs@34499c501908818a2b08e589a7aecf963343cee7/spectral_gt_cockpit.png' },
